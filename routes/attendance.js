@@ -7,7 +7,7 @@
 const router = require('express').Router();
 const ctrl   = require('../controllers/attendanceController');
 
-// ---- STANDARD CRUD ----------------------------------------
+// STANDARD CRUD
 
 // GET /api/attendance
 // Returns ALL attendance records (useful for admin/reports)
@@ -21,7 +21,7 @@ router.get('/:id', ctrl.getById);
 // Removes a specific attendance record (e.g. for corrections)
 router.delete('/:id', ctrl.remove);
 
-// ---- BIOSTAR CORE FEATURES --------------------------------
+// BIOSTAR CORE FEATURES
 
 // POST /api/attendance/clock-in
 // Body: { "intern_id": 5 }
@@ -33,7 +33,7 @@ router.post('/clock-in', ctrl.clockIn);
 // Finds the open clock-in for that intern and stamps clock-out
 router.put('/clock-out', ctrl.clockOut);
 
-// ---- REPORTING ROUTES -------------------------------------
+// REPORTING ROUTES
 
 // GET /api/attendance/intern/5
 // Returns all attendance records for a specific intern

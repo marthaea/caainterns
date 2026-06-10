@@ -1,9 +1,7 @@
-// ============================================================
 // controllers/universitiesController.js — Logic for Universities
-// ============================================================
-// Simple table. We enrich it with intern count per university
-// so you can see which universities send the most interns.
-// ============================================================
+// Simple table. I enriched it with intern count per university
+// so one can see which universities send the most interns.
+
 
 const db = require('../db');
 
@@ -42,7 +40,7 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { uni_name, location } = req.body;
     if (!name) return res.status(400).json({ error: 'University name is required' });
 
     const [result] = await db.query('INSERT INTO university (name) VALUES (?)', [name]);
@@ -55,7 +53,8 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { name } = req.body;
-    await db.query('UPDATE university SET name = ? WHERE id = ?', [name, req.params.id]);
+    await db.query(
+  'INSERT INTO University (uni_name, location) VALUES (?, ?)', [uni_name, location]);
     res.json({ message: 'University updated successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

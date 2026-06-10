@@ -59,7 +59,6 @@ exports.getById = async (req, res) => {
   }
 };
 
-// ============================================================
 // POST /api/attendance/clock-in
 // Body: { "intern_id": 5 }
 //
@@ -69,7 +68,6 @@ exports.getById = async (req, res) => {
 // 2. If yes → reject. Can't clock in twice without clocking out.
 // 3. If no  → insert a new row with clock_in = NOW()
 //             leave clock_out as NULL (it'll be filled on clock-out)
-// ============================================================
 exports.clockIn = async (req, res) => {
   try {
     const { intern_id } = req.body;
@@ -81,8 +79,8 @@ exports.clockIn = async (req, res) => {
     // CHECK FOR DUPLICATE: look for a row where this intern
     // has clocked in but NOT yet clocked out
     const [existing] = await db.query(
-      `SELECT id FROM attendance
-       WHERE intern_id = ? AND clock_out IS NULL`,
+      `SELECT attendance_id FROM Attendance
+       WHERE intern_id = ? AND date = CURDATE() AND clock_out IS NULL`,
       [intern_id]
     );
 
@@ -98,7 +96,7 @@ exports.clockIn = async (req, res) => {
     // All clear — record the clock-in with the current timestamp
     // NOW() is a MySQL function that returns the current datetime
     const [result] = await db.query(
-      'INSERT INTO attendance (intern_id, clock_in) VALUES (?, NOW())',
+      'INSERT INTO Attendance (intern_id, date, clock_in) VALUES (?, CURDATE(), CURTIME())',
       [intern_id]
     );
 
@@ -112,7 +110,7 @@ exports.clockIn = async (req, res) => {
   }
 };
 
-// ============================================================
+
 // PUT /api/attendance/clock-out
 // Body: { "intern_id": 5 }
 //
@@ -120,7 +118,7 @@ exports.clockIn = async (req, res) => {
 // 1. Find the OPEN session for this intern (clock_out IS NULL)
 // 2. If none found → they're not clocked in, return error
 // 3. If found → set clock_out = NOW() on that row
-// ============================================================
+
 exports.clockOut = async (req, res) => {
   try {
     const { intern_id } = req.body;
@@ -131,22 +129,22 @@ exports.clockOut = async (req, res) => {
 
     // Find the open session
     const [existing] = await db.query(
-      `SELECT id FROM attendance
-       WHERE intern_id = ? AND clock_out IS NULL`,
+      `SELECT attendance_id FROM Attendance
+       WHERE intern_id = ? AND date = CURDATE() AND clock_out IS NULL`,
       [intern_id]
     );
 
     if (existing.length === 0) {
       return res.status(409).json({
-        error: 'No active clock-in found for this intern.'
+        error: 'No active clock-in found for this intern, today.'
       });
     }
 
     // Update ONLY the open row — close it by setting clock_out
     await db.query(
-      `UPDATE attendance
-       SET clock_out = NOW()
-       WHERE intern_id = ? AND clock_out IS NULL`,
+      `UPDATE Attendance
+       SET clock_out = CURTIME()
+       WHERE intern_id = ? AND date = CURDATE() AND clock_out IS NULL`,
       [intern_id]
     );
 
@@ -155,7 +153,7 @@ exports.clockOut = async (req, res) => {
       `SELECT
          *,
          TIMESTAMPDIFF(MINUTE, clock_in, clock_out) AS minutes_worked
-       FROM attendance
+       FROM Attendance
        WHERE id = ?`,
       [existing[0].id]
     );
@@ -170,10 +168,10 @@ exports.clockOut = async (req, res) => {
   }
 };
 
-// ============================================================
+
 // GET /api/attendance/intern/:intern_id
 // All attendance records for ONE specific intern
-// ============================================================
+
 exports.getByIntern = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -199,12 +197,11 @@ exports.getByIntern = async (req, res) => {
   }
 };
 
-// ============================================================
 // GET /api/attendance/report/range?start=2025-01-01&end=2025-01-31
 //
 // Date-range report — returns all sessions within a window.
 // Uses req.query to read ?start= and ?end= from the URL.
-// ============================================================
+
 exports.getByDateRange = async (req, res) => {
   try {
     // req.query reads the ?key=value part of the URL
@@ -239,10 +236,9 @@ exports.getByDateRange = async (req, res) => {
   }
 };
 
-// ============================================================
 // DELETE /api/attendance/:id
 // Remove a single attendance record (for corrections/errors)
-// ============================================================
+
 exports.remove = async (req, res) => {
   try {
     await db.query('DELETE FROM attendance WHERE id = ?', [req.params.id]);

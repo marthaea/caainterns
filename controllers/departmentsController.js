@@ -1,17 +1,13 @@
-// ============================================================
-// controllers/departmentsController.js — Logic for Departments
-// ============================================================
-// Departments are simple — just id and name typically.
+// Logic for Departments
+// Departments contain id and name.
 // But we enrich GET responses with the COUNT of interns
-// in each department, which is useful for dashboards.
-// ============================================================
+// in each department, which is useful for dashboards and analysis.
+
 
 const db = require('../db');
-
-// ============================================================
 // GET /api/departments
-// Returns all departments + how many interns are in each
-// ============================================================
+// Returns all departments and how many interns are in each
+
 exports.getAll = async (req, res) => {
   try {
     // COUNT(i.id) counts interns per department.
@@ -31,11 +27,8 @@ exports.getAll = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// ============================================================
 // GET /api/departments/:id
 // Returns one department + the interns who belong to it
-// ============================================================
 exports.getById = async (req, res) => {
   try {
     // First fetch the department itself
@@ -57,14 +50,11 @@ exports.getById = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// ============================================================
 // POST /api/departments
 // Creates a new department
-// ============================================================
 exports.create = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { dpt_name } = req.body;
     if (!name) return res.status(400).json({ error: 'Department name is required' });
 
     const [result] = await db.query(
@@ -77,23 +67,18 @@ exports.create = async (req, res) => {
   }
 };
 
-// ============================================================
 // PUT /api/departments/:id
 // Updates a department name
-// ============================================================
 exports.update = async (req, res) => {
   try {
     const { name } = req.body;
-    await db.query('UPDATE department SET name = ? WHERE id = ?', [name, req.params.id]);
+    await db.query('UPDATE Department SET dpt_name = ? WHERE department_id = ?', [dpt_name, req.params.id]);
     res.json({ message: 'Department updated successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
-// ============================================================
 // DELETE /api/departments/:id
-// ============================================================
 exports.remove = async (req, res) => {
   try {
     await db.query('DELETE FROM department WHERE id = ?', [req.params.id]);

@@ -1,16 +1,13 @@
-// ============================================================
 // controllers/supervisorsController.js — Logic for Supervisors
-// ============================================================
-// Supervisors oversee interns. We enrich GET calls to also
+// Supervisors oversee interns. I enriched GET calls to also
 // return the list of interns each supervisor manages.
-// ============================================================
+
 
 const db = require('../db');
 
-// ============================================================
 // GET /api/supervisors
 // All supervisors with intern count
-// ============================================================
+
 exports.getAll = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -27,10 +24,9 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// ============================================================
 // GET /api/supervisors/:id
 // One supervisor + their interns
-// ============================================================
+
 exports.getById = async (req, res) => {
   try {
     const [supervisor] = await db.query(
@@ -50,9 +46,9 @@ exports.getById = async (req, res) => {
   }
 };
 
-// ============================================================
+
 // POST /api/supervisors
-// ============================================================
+// Creates a new supervisor record
 exports.create = async (req, res) => {
   try {
     const { first_name, last_name, email, phone } = req.body;
@@ -70,9 +66,8 @@ exports.create = async (req, res) => {
   }
 };
 
-// ============================================================
 // PUT /api/supervisors/:id
-// ============================================================
+// Updates an existing supervisor's details by their id
 exports.update = async (req, res) => {
   try {
     const { first_name, last_name, email, phone } = req.body;
@@ -86,9 +81,8 @@ exports.update = async (req, res) => {
   }
 };
 
-// ============================================================
 // DELETE /api/supervisors/:id
-// ============================================================
+// Removes a supervisor from the database by their id
 exports.remove = async (req, res) => {
   try {
     await db.query('DELETE FROM supervisors WHERE id = ?', [req.params.id]);

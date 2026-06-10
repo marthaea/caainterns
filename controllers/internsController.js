@@ -1,25 +1,20 @@
-// ============================================================
-// controllers/internsController.js — Logic for Intern routes
-// ============================================================
+// Logic for Intern routes
 // Controllers are where the ACTUAL WORK happens.
-// Routes just say "this URL maps to this function."
+// Routes just show what URL maps to a particular functionfunction."
 // Controllers contain that function and its database logic.
-//
 // Pattern used throughout: async/await with try/catch
 //   - async  → marks the function as asynchronous (it will wait for DB)
 //   - await  → pauses execution until the DB responds
 //   - try    → attempt the database operation
 //   - catch  → if anything goes wrong, return a clean error instead of crashing
-// ============================================================
 
 // db is our MySQL connection pool from db.js
 const db = require('../db');
 
-// ============================================================
 // GET /api/interns
 // Returns every intern — with their department and university
 // names joined in (so you get readable data, not just IDs)
-// ============================================================
+
 exports.getAll = async (req, res) => {
   try {
     // JOIN pulls matching rows from other tables.
@@ -31,11 +26,14 @@ exports.getAll = async (req, res) => {
     const [rows] = await db.query(`
       SELECT
         i.*,
-        d.name  AS department_name,
-        u.name  AS university_name
+        d.dpt_name,
+        u.uni_name,
+        s.first_name AS supervisor_first_name,
+        s.last_name  AS supervisor_last_name
       FROM intern i
-      LEFT JOIN department d ON i.department_id = d.id
-      LEFT JOIN university  u ON i.university_id  = u.id
+      LEFT JOIN Department d ON i.department_id = d.department_id
+      LEFT JOIN university  u ON i.university_id  = u.university_id
+      LEFT JOIN Supervisor  s ON i.supervisor_id   = s.supervisor_id
     `);
 
     // rows is an array of objects, one per intern
@@ -43,15 +41,14 @@ exports.getAll = async (req, res) => {
     res.json(rows);
   } catch (err) {
     // 500 = Internal Server Error
-    // We send the error message so you can debug it in Postman
+    // Sending the error message so that I can debug it in Postman
     res.status(500).json({ error: err.message });
   }
 };
 
-// ============================================================
 // GET /api/interns/:id
 // Returns ONE intern by their ID
-// ============================================================
+
 exports.getById = async (req, res) => {
   try {
     // req.params.id captures the number from the URL
@@ -81,10 +78,8 @@ exports.getById = async (req, res) => {
   }
 };
 
-// ============================================================
 // POST /api/interns
 // Creates a new intern record
-// ============================================================
 exports.create = async (req, res) => {
   try {
     // Destructure the request body — pull out the specific
@@ -115,10 +110,9 @@ exports.create = async (req, res) => {
   }
 };
 
-// ============================================================
 // PUT /api/interns/:id
 // Updates an existing intern's details
-// ============================================================
+
 exports.update = async (req, res) => {
   try {
     const { first_name, last_name, email, phone, department_id, university_id, supervisor_id } = req.body;
@@ -138,10 +132,8 @@ exports.update = async (req, res) => {
   }
 };
 
-// ============================================================
 // DELETE /api/interns/:id
 // Removes an intern from the database
-// ============================================================
 exports.remove = async (req, res) => {
   try {
     await db.query('DELETE FROM intern WHERE id = ?', [req.params.id]);
