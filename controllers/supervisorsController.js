@@ -1,79 +1,71 @@
-// controllers/supervisorsController.js — Logic for Supervisors
-// Supervisors oversee interns. I enriched GET calls to also
-// return the list of interns each supervisor manages.
-
-
 const db = require('../db');
 
 // GET /api/supervisors
-// All supervisors with intern count
-
 exports.getAll = async (req, res) => {
   try {
-    const [rows] = await db.query(`
+    const result = await db.query(`
       SELECT
         s.*,
-        COUNT(i.id) AS intern_count
-      FROM supervisors s
-      LEFT JOIN intern i ON i.supervisor_id = s.id
-      GROUP BY s.id
+        COUNT(i.intern_id) AS intern_count
+      FROM Supervisor s
+      LEFT JOIN Intern i ON i.supervisor_id = s.supervisor_id
+      GROUP BY s.supervisor_id
     `);
-    res.json(rows);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // GET /api/supervisors/:id
-// One supervisor + their interns
-
 exports.getById = async (req, res) => {
   try {
-    const [supervisor] = await db.query(
-      'SELECT * FROM supervisors WHERE id = ?',
+    const supervisorResult = await db.query(
+      'SELECT * FROM Supervisor WHERE supervisor_id = $1',
       [req.params.id]
     );
-    if (!supervisor[0]) return res.status(404).json({ error: 'Supervisor not found' });
+    if (!supervisorResult.rows[0]) return res.status(404).json({ error: 'Supervisor not found' });
 
-    const [interns] = await db.query(
-      'SELECT id, first_name, last_name, email FROM intern WHERE supervisor_id = ?',
+    const internsResult = await db.query(
+      'SELECT intern_id, first_name, last_name, email FROM Intern WHERE supervisor_id = $1',
       [req.params.id]
     );
 
-    res.json({ ...supervisor[0], interns });
+    res.json({ ...supervisorResult.rows[0], interns: internsResult.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
 // POST /api/supervisors
-// Creates a new supervisor record
 exports.create = async (req, res) => {
   try {
-    const { first_name, last_name, email, phone } = req.body;
+    const { first_name, last_name, email } = req.body;
     if (!first_name || !last_name || !email) {
-      return res.status(400).json({ error: 'first_name, last_name, and email are required' });
+      return res.status(400).json({ error: 'first_name, last_name and email are required' });
     }
 
-    const [result] = await db.query(
-      'INSERT INTO supervisors (first_name, last_name, email, phone) VALUES (?, ?, ?, ?)',
-      [first_name, last_name, email, phone]
+    const result = await db.query(
+      `INSERT INTO Supervisor (first_name, last_name, email)
+       VALUES ($1, $2, $3)
+       RETURNING supervisor_id`,
+      [first_name, last_name, email]
     );
-    res.status(201).json({ message: 'Supervisor created', supervisor_id: result.insertId });
+    res.status(201).json({ message: 'Supervisor created', supervisor_id: result.rows[0].supervisor_id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // PUT /api/supervisors/:id
-// Updates an existing supervisor's details by their id
 exports.update = async (req, res) => {
   try {
-    const { first_name, last_name, email, phone } = req.body;
+    const { first_name, last_name, email } = req.body;
     await db.query(
-      'UPDATE supervisors SET first_name=?, last_name=?, email=?, phone=? WHERE id=?',
-      [first_name, last_name, email, phone, req.params.id]
+      `UPDATE Supervisor
+       SET first_name = $1, last_name = $2, email = $3
+       WHERE supervisor_id = $4`,
+      [first_name, last_name, email, req.params.id]
     );
     res.json({ message: 'Supervisor updated successfully' });
   } catch (err) {
@@ -82,10 +74,9 @@ exports.update = async (req, res) => {
 };
 
 // DELETE /api/supervisors/:id
-// Removes a supervisor from the database by their id
 exports.remove = async (req, res) => {
   try {
-    await db.query('DELETE FROM supervisors WHERE id = ?', [req.params.id]);
+    await db.query('DELETE FROM Supervisor WHERE supervisor_id = $1', [req.params.id]);
     res.json({ message: 'Supervisor deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
